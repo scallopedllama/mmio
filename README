@@ -1,0 +1,46 @@
+Memory-Mapped IO Interface Driver
+(c)2014 Joe Balough <jbb5044@gmail.com>
+
+The Memory-Mapped IO Driver can be used to get a userspace sysfs interface
+to mmio provided by your SOC or a GPMC-Connected Microcontroller.
+
+At the moment, there is no cmdline or device tree interface to this driver
+so it is only useful to add it as a driver then use the mmio_classdev_register
+function to register mmio devices on the system.
+
+Here is an example:
+
+Define an array of mmio_entries 
+struct mmio_entry entries[] = {
+	{.name = "entry_3", .mask = BIT(2), .flags = MMIO_ENTRY_RW },
+	{.name = "entry_2", .mask = BIT(1), .flags = MMIO_ENTRY_RW },
+	{.name = "entry_1", .mask = BIT(0), .flags = MMIO_ENTRY_RW },
+};
+
+Define a mmio_clasdev
+struct mmio_classdev my_mmio = {
+	.name    = "mmio_group_1",
+	.size    = 2,
+	.offset  = 0,
+	.entries = &entries,
+	.num_entries = ARRAY_SIZE(entries),
+};
+
+In an init function, remap the memory you need to use. Something like this:
+void __init mmio_init(void)
+{
+	unsigned long base;
+	void *reg;
+	
+	gpmc_cs_request(4, 0x100, &base);
+	reg = ioremap_nocache(base, 0x100);
+	my_mmio.base = reg;
+}
+
+Register the classdev in a fs_initcall() function. Something like this:
+int __init mmio_register(void)
+{
+	mmio_classdev_register(NULL, &my_mmio);
+}
+fs_initcall(mmio_register);
+

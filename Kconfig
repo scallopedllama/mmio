@@ -1,0 +1,6 @@
+config MMIO
+	bool "MMIO Support"
+	default y
+	help
+	   Say Y to enable the mmio class in /sys/class/mmio.
+	   This allows you to access Memory-Mapped IO from userspace.

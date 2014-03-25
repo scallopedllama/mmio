@@ -1,0 +1,6 @@
+Verify it works with current kernel
+update style to match kernel guidelines
+Add support for Command Line Arguments to Module
+Add support for Device Tree
+Add sysfs ability to add entries / banks
+Figure out proper file permissions
