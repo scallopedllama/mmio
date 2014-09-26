@@ -138,7 +138,10 @@ int mmio_set_value(struct mmio_classdev *parent, struct mmio_entry *entry, unsig
 	}
 	
 	if ((value & entry->mask) != value)
+	{
+		up_write(&parent->rwsem);
 		return -EOVERFLOW;
+	}
 	
 	reg &= ~entry->mask;
 	reg |= value;
