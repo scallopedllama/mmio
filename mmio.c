@@ -38,8 +38,15 @@ u32 mmio_get_value(struct mmio_classdev *parent, struct mmio_entry *entry)
 		printk(KERN_ERR "%s: preventing null pointer deref. parent is 0x%p, entry is 0x%p\n", __FUNCTION__, parent, entry);
 		return 0;
 	}
-	
-	down_read(&parent->rwsem);
+
+	// Avoid using semaphore if uninitialized
+	// Allows usage before mmio_classdev_register is called (before fs_init)
+	// Use caution whenever calling this function without proper initialization
+	if(parent->dev != NULL)
+	{
+		down_read(&parent->rwsem);
+	}
+
 	switch(parent->size)
 	{
 		default:
@@ -54,7 +61,10 @@ u32 mmio_get_value(struct mmio_classdev *parent, struct mmio_entry *entry)
 			break;
 	}
 	
-	up_read(&parent->rwsem);
+	if(parent->dev != NULL)
+	{
+		up_read(&parent->rwsem);
+	}
 	
 	reg &= entry->mask;
 	
@@ -112,7 +122,14 @@ int mmio_set_value(struct mmio_classdev *parent, struct mmio_entry *entry, unsig
 	if (!parent || !entry)
 		return -EINVAL;
 	
-	down_write(&parent->rwsem);
+	// Avoid using semaphore if uninitialized
+	// Allows usage before mmio_classdev_register is called (before fs_init)
+	// Use caution whenever calling this function without proper initialization
+	if(parent->dev != NULL)
+	{
+		down_write(&parent->rwsem);
+	}
+
 	switch(parent->size)
 	{
 		default:
@@ -139,7 +156,10 @@ int mmio_set_value(struct mmio_classdev *parent, struct mmio_entry *entry, unsig
 	
 	if ((value & entry->mask) != value)
 	{
-		up_write(&parent->rwsem);
+		if(parent->dev != NULL)
+		{
+			up_write(&parent->rwsem);
+		}
 		return -EOVERFLOW;
 	}
 	
@@ -160,7 +180,10 @@ int mmio_set_value(struct mmio_classdev *parent, struct mmio_entry *entry, unsig
 			break;
 	}
 	
-	up_write(&parent->rwsem);
+	if(parent->dev != NULL)
+	{
+		up_write(&parent->rwsem);
+	}
 	return 0;
 }
 EXPORT_SYMBOL_GPL(mmio_set_value);
